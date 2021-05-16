@@ -4,17 +4,18 @@ import { Link, useHistory } from "react-router-dom";
 import { useAuth } from "../Contexts/AuthContext";
 import { useDB } from "../Contexts/dbContext";
 import { useCollectionData } from "react-firebase-hooks/firestore";
+import Message from "../Components/Message";
 
 export default function Chatroom() {
   const history = useHistory();
   const messageRef = useRef();
-  const { currentUser } = useAuth();
+  const dummy = useRef();
+  const { currentUser, logout } = useAuth();
   const { getOneChatRoom, getAllMessages, addMessage, getOneUser } = useDB();
   const [chatRoomName, setChatRoomName] = useState("");
   const [chatRoomId, setChatRoomId] = useState("");
 
   const [messages] = useCollectionData(getAllMessages(chatRoomId));
-  console.log(messages);
 
   useEffect(async () => {
     try {
@@ -25,6 +26,10 @@ export default function Chatroom() {
       console.log(error);
     }
   }, []);
+
+  useEffect(() => {
+    dummy.current.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -54,6 +59,15 @@ export default function Chatroom() {
     }
   };
 
+  const handleLogOut = async () => {
+    try {
+      await logout();
+      history.push("/login");
+    } catch (error) {
+      console.log("There was a problem while logging you out");
+    }
+  };
+
   return (
     <div
       style={{
@@ -69,12 +83,23 @@ export default function Chatroom() {
             Home
           </Link>
         </Nav>
-        <Button variant="outline-info">Log Out</Button>
+        <Button onClick={handleLogOut} variant="outline-info">
+          Log Out
+        </Button>
       </Navbar>
-      <div className="messages" style={{ height: "400px" }}></div>
-      <Form className="d-flex">
+      <div
+        className="messages"
+        style={{ height: "400px", padding: "1rem", overflowY: "scroll" }}
+      >
+        {messages &&
+          messages.map((message, index) => (
+            <Message key={index} messageInfo={message} />
+          ))}
+        <div ref={dummy}></div>
+      </div>
+      <Form className="d-flex" onSubmit={sendMessage}>
         <Form.Control type="text" required ref={messageRef} />
-        <Button variant="primary" onClick={sendMessage}>
+        <Button variant="primary" type="submit">
           Send
         </Button>
       </Form>

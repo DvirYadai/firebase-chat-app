@@ -43,8 +43,10 @@ export function DbProvider({ children }) {
   }
 
   function getAllMessages(roomId) {
-    return db.collection("Messages").where("chatroom_id", "==", roomId);
-    // .orderBy("time");
+    return db
+      .collection("Messages")
+      .where("chatroom_id", "==", roomId)
+      .orderBy("time");
   }
 
   function addMessage(chatRoomId, message, userUid, username, userImg) {
@@ -56,7 +58,6 @@ export function DbProvider({ children }) {
       username,
       user_img: userImg,
     };
-    console.log(messageObj);
 
     return db.collection("Messages").add(messageObj);
   }
