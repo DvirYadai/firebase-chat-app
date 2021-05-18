@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Nav, Navbar, Button, Form } from "react-bootstrap";
+import { Nav, Navbar, Button, Form, Modal } from "react-bootstrap";
 import { Link, useHistory } from "react-router-dom";
 import { useAuth } from "../Contexts/AuthContext";
 import { useDB } from "../Contexts/dbContext";
 import { useCollectionData } from "react-firebase-hooks/firestore";
 import Message from "../Components/Message";
+import ModalForm from "../Components/ModalForm";
 
 export default function Chatroom() {
   const history = useHistory();
@@ -14,6 +15,10 @@ export default function Chatroom() {
   const { getOneChatRoom, getAllMessages, addMessage, getOneUser } = useDB();
   const [chatRoomName, setChatRoomName] = useState("");
   const [chatRoomId, setChatRoomId] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [inviteUid, setInviteUid] = useState("");
+  const [alertDiv, setAlertDiv] = useState("");
 
   const [messages] = useCollectionData(getAllMessages(chatRoomId));
 
@@ -68,6 +73,41 @@ export default function Chatroom() {
     }
   };
 
+  const handleShowForm = () => {
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setAlertDiv("");
+    setShowForm(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setAlertDiv("");
+    setLoading(true);
+    if (inviteUid === "") {
+      setAlertDiv("You must enter an Uid");
+      setLoading(false);
+      return;
+    }
+    try {
+      const user = await getOneUser(inviteUid);
+      if (user.empty) {
+        setAlertDiv("Uid doesn't exists");
+        return;
+      }
+      setLoading(false);
+      setAlertDiv(
+        "Give your invited user this page url and the password for the room"
+      );
+      setInviteUid("");
+    } catch (error) {
+      setAlertDiv("There was a problem, please try again");
+      setLoading(false);
+    }
+  };
+
   return (
     <div
       style={{
@@ -83,6 +123,20 @@ export default function Chatroom() {
             Home
           </Link>
         </Nav>
+        <Button onClick={handleShowForm} variant="outline-info">
+          Invite users
+        </Button>
+        <ModalForm
+          modalTitle="Invite users"
+          formLabel="User Email"
+          buttonText="Invite"
+          showForm={showForm}
+          handleCloseForm={handleCloseForm}
+          handleSubmit={handleSubmit}
+          loading={loading}
+          setInputState={setInviteUid}
+          alertDiv={alertDiv}
+        />
         <Button onClick={handleLogOut} variant="outline-info">
           Log Out
         </Button>

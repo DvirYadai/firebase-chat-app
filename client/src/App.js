@@ -7,6 +7,7 @@ import { Container } from "react-bootstrap";
 import { AuthProvider } from "./Contexts/AuthContext";
 import { DbProvider } from "./Contexts/dbContext";
 import PrivateRoute from "./Components/PrivateRoute";
+import PrivateChatroomRoute from "./Components/PrivateChatroomRoute";
 import Chatroom from "./Pages/Chatroom";
 
 function App() {
@@ -21,7 +22,11 @@ function App() {
             <Router>
               <Switch>
                 <PrivateRoute exact path="/" component={Main} />
-                <PrivateRoute exact path="/chatroom/:id" component={Chatroom} />
+                <PrivateChatroomRoute
+                  exact
+                  path="/chatroom/:id"
+                  component={Chatroom}
+                />
                 <Route exact path="/signup">
                   <SignUp />
                 </Route>

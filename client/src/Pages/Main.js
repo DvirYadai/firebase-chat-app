@@ -4,21 +4,32 @@ import { useHistory } from "react-router";
 import { Link } from "react-router-dom";
 import { useAuth } from "../Contexts/AuthContext";
 import { useDB } from "../Contexts/dbContext";
+import { v4 as uuidv4 } from "uuid";
+import ModalForm from "../Components/ModalForm";
 
 export default function Main() {
   const history = useHistory();
-  const { logout } = useAuth();
+  const { logout, currentUser } = useAuth();
   const { getAllChatrooms, addChatRoom, getOneChatRoom } = useDB();
   const [chatRooms, setChatRooms] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const chatRoomNameRef = useRef();
+  const [alertDiv, setAlertDiv] = useState("");
+  const [chatRoomName, setChatRoomName] = useState("");
+  const [roomPassword, setRoomPassword] = useState("");
 
   useEffect(async () => {
     const temp = [];
     try {
       const allChatrooms = await getAllChatrooms();
-      allChatrooms.forEach((doc) => temp.push(doc.data()));
+      allChatrooms.forEach((doc) => {
+        const data = doc.data();
+        for (const uid of data.users) {
+          if (uid === currentUser.uid) {
+            temp.push(doc.data());
+          }
+        }
+      });
       setChatRooms([...temp]);
     } catch (error) {
       console.log(error);
@@ -27,16 +38,17 @@ export default function Main() {
 
   const handleSubmit = async () => {
     setLoading(true);
+    const id = uuidv4();
     try {
-      const room = await addChatRoom(chatRoomNameRef.current.value);
-      const res = await getOneChatRoom(room.id);
+      await addChatRoom(id, chatRoomName, currentUser.uid, roomPassword);
+      const res = await getOneChatRoom(id);
       setLoading(false);
       setShowForm(false);
       const roomInfo = res.data();
       history.push(`/chatroom/${roomInfo.chat_room_id}`);
     } catch (error) {
       setLoading(false);
-      console.log(error);
+      setAlertDiv("There was a problem, please try again");
     }
   };
 
@@ -63,35 +75,20 @@ export default function Main() {
         Log Out
       </Button>
       <Button onClick={handleShowForm}>Create new chatroom</Button>
-      <Modal show={showForm} onHide={handleCloseForm}>
-        <Modal.Header>
-          <Modal.Title>Create new chatroom</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group id="name">
-              <Form.Label>Name</Form.Label>
-              <Form.Control type="text" ref={chatRoomNameRef} required />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseForm}>
-            Cancel
-          </Button>
-          <Button type="submit" onClick={handleSubmit}>
-            {loading ? (
-              <div className="spinner-border text-dark" role="status">
-                <span className="sr-only"></span>
-              </div>
-            ) : (
-              "Create room"
-            )}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <ModalForm
+        modalTitle="Create new chatroom"
+        formLabel="Name"
+        buttonText="Create room"
+        showForm={showForm}
+        handleCloseForm={handleCloseForm}
+        handleSubmit={handleSubmit}
+        loading={loading}
+        setInputState={setChatRoomName}
+        setRoomPassword={setRoomPassword}
+        alertDiv={alertDiv}
+      />
       <div className="mt-4">
-        <h4>Current chatrooms:</h4>
+        <h4>Your chatrooms:</h4>
         <ListGroup>
           {chatRooms.map((room, index) => (
             <ListGroup.Item key={index}>

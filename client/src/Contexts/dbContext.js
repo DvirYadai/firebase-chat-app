@@ -22,23 +22,28 @@ export function DbProvider({ children }) {
     return docRef.get();
   }
 
-  function addChatRoom(name) {
-    return db.collection("ChatRooms").add({
-      chat_room_id: uuidv4(),
-      chat_room_name: name,
-      users_connected: [],
-    });
+  async function addChatRoom(id, name, userUid, roomPassword) {
+    await db
+      .collection("ChatRooms")
+      .doc(id)
+      .set({
+        chat_room_id: id,
+        room_password: roomPassword,
+        chat_room_name: name,
+        users: [userUid],
+      });
   }
 
   function getOneUser(uid) {
     return db.collection("Users").where("user_uid", "==", uid).get();
   }
 
-  function addUser(imgUrl, userUid, username) {
+  function addUser(imgUrl, userUid, username, email) {
     return db.collection("Users").add({
       img_url: imgUrl,
       user_uid: userUid,
-      username: username,
+      username,
+      email,
     });
   }
 
@@ -62,6 +67,15 @@ export function DbProvider({ children }) {
     return db.collection("Messages").add(messageObj);
   }
 
+  function addPermission(chatroomID, userUid) {
+    return db
+      .collection("ChatRooms")
+      .doc(chatroomID)
+      .update({
+        users: firebase.firestore.FieldValue.arrayUnion(userUid),
+      });
+  }
+
   const value = {
     getAllChatrooms,
     addUser,
@@ -70,6 +84,7 @@ export function DbProvider({ children }) {
     getAllMessages,
     addMessage,
     getOneUser,
+    addPermission,
   };
 
   return <DbContext.Provider value={value}>{children}</DbContext.Provider>;

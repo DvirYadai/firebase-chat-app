@@ -38,7 +38,12 @@ export default function SignUp() {
       );
       if (!imgRef.current.files[0]) {
         console.log("no img");
-        await addUser(null, user.uid, usernameRef.current.value);
+        await addUser(
+          null,
+          user.uid,
+          usernameRef.current.value,
+          emailRef.current.value
+        );
         setLoading(false);
         history.push("/");
         return;
@@ -50,7 +55,12 @@ export default function SignUp() {
           .ref()
           .child(storageResults._delegate.metadata.fullPath)
           .getDownloadURL();
-        await addUser(downloadUrl, user.uid, usernameRef.current.value);
+        await addUser(
+          downloadUrl,
+          user.uid,
+          usernameRef.current.value,
+          emailRef.current.value
+        );
         setLoading(false);
         history.push("/");
       }
